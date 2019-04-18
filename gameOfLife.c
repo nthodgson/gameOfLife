@@ -12,11 +12,11 @@
 // Function prototype declarations
 
 void populateBoard(int *rows, int *cols, int *iterations, int *length, int ***board, char fileName[]);
-void printBoard(int **board, int rows);
-void updateBoard(int **board, int **newBoard, int size, bool wrap);
+void printBoard(int **board, int rows, int cols);
+void updateBoard(int **board, int **newBoard, int rows, int cols, bool wrap);
 void config(char speed[], bool *wrap, bool *show, int args, char **arg);
-void resetBoard(int **board, int **newBoard, int size);
-void playGame(int **board, int **newBoard, int size, int iterations, bool wrap, bool show, char speed[]);
+void resetBoard(int **board, int **newBoard, int rows, int cols);
+void playGame(int **board, int **newBoard, int rows, int cols, int iterations, bool wrap, bool show, char speed[]);
 
 int main(int args, char** arg) {
 	int i = 0, rows = 0, cols = 0, iterations = 0, length = 0;
@@ -34,7 +34,7 @@ int main(int args, char** arg) {
 		newBoard[i] = (int *)malloc(cols * sizeof(int));
 	}
 
-	playGame(board, newBoard, rows, iterations, wrap, show, speed);
+	playGame(board, newBoard, rows, cols, iterations, wrap, show, speed);
 
 	for (int i=0; i<rows; i++) { // Free dynamically allocated memory
 		free(board[i]);
@@ -52,7 +52,7 @@ and executes the full game. Prints only the final board if bool show = false. Pr
 each iteration if show = true. 
 ==================================================================================== */
 
-void playGame(int **board, int **newBoard, int size, int iterations, bool wrap, bool show, char speed[]) { 
+void playGame(int **board, int **newBoard, int rows, int cols, int iterations, bool wrap, bool show, char speed[]) { 
 	struct timeval start_time, end_time;
 	int sleepTime, i;
 
@@ -69,23 +69,23 @@ void playGame(int **board, int **newBoard, int size, int iterations, bool wrap, 
 	gettimeofday(&start_time, NULL);
 
 	for (i=0; i<iterations; i++) { // Runs specified number of iterations of the game
-		updateBoard(board, newBoard, size, wrap);
-		resetBoard(board, newBoard, size);
+		updateBoard(board, newBoard, rows, cols, wrap);
+		resetBoard(board, newBoard, rows, cols);
 		if (show) {
 			system("clear");
-			printBoard(board, size);
+			printBoard(board, rows, cols);
 			usleep(sleepTime);
 		}
 	}
 
 
 	if (!show) {
-		printBoard(board, size);
+		printBoard(board, rows, cols);
 	}
 
 	gettimeofday(&end_time, NULL);
 
-	printf("\nTotal time for %d iterations of %dx%d is %f seconds.\n\n", iterations, size, size, ((((double)end_time.tv_sec)
+	printf("\nTotal time for %d iterations of %dx%d is %f seconds.\n\n", iterations, rows, cols, ((((double)end_time.tv_sec)
 		  - ((double)start_time.tv_sec))+((float)end_time.tv_usec-(float)start_time.tv_usec)/1000000.0));
 
 	return;
@@ -124,7 +124,7 @@ void populateBoard(int *rows, int *cols, int *iterations, int *length, int ***bo
 		}
 
 		for (i=0; i<*rows; i++) { // Populate board with 0's
-			for (j=0; j<*rows; j++) {
+			for (j=0; j<*cols; j++) {
 					(*board)[i][j] = 0;
 			}
 		}
@@ -144,31 +144,31 @@ updateBoard(): Runs through one iteration of cell checking. Updates 'newBoard' b
 on current values in 'board'
 ==================================================================================== */
 
-void updateBoard(int **board, int **newBoard, int size, bool wrap) { 
+void updateBoard(int **board, int **newBoard, int rows, int cols, bool wrap) { 
 	int i = 0, j = 0, n = 0, x = 0, torusN = 0, torusX = 0, count = 0;
 
 	// This quadruple-nested for-loop runs through every index in 'board'
 	// and checks the 8 indexes around it based on the 'wrap' condition. 
 
-	for (i=0; i<size; i++) { 
-		for (j=0; j<size; j++) {
+	for (i=0; i<rows; i++) { 
+		for (j=0; j<cols; j++) {
 			for (n=(i-1); n<(i+2); n++) {
 				for (x=(j-1); x<(j+2); x++) {
-					if ((n >= 0 && n < size) && (x >= 0 && x < size)) {
+					if ((n >= 0 && n < rows) && (x >= 0 && x < cols)) {
 						if (n != i || x != j) {
 							if (board[n][x] == 1)
 								count++;
 						}
 					} else if (wrap) {
 						if (n == -1)
-							torusN = size-1;
-						else if (n == size)
+							torusN = rows-1;
+						else if (n == rows)
 							torusN = 0;
 						else
 							torusN = n;
 						if (x == -1)
-							torusX = size-1;
-						else if (x == size)
+							torusX = cols-1;
+						else if (x == cols)
 							torusX = 0;
 						else
 							torusX = x;
@@ -194,11 +194,11 @@ void updateBoard(int **board, int **newBoard, int size, bool wrap) {
 resetBoard(): Makes board equal to newBoard for each iteration of playGame()
 ==================================================================================== */
 
-void resetBoard(int **board, int **newBoard, int size) {  
+void resetBoard(int **board, int **newBoard, int rows, int cols) {  
 	int i, j;
 
-	for (i=0; i<size; i++) {
-		for (j=0; j<size; j++) {
+	for (i=0; i<rows; i++) {
+		for (j=0; j<cols; j++) {
 			board[i][j] = newBoard[i][j];
 		}
 	}
@@ -210,11 +210,11 @@ void resetBoard(int **board, int **newBoard, int size) {
 printBoard(): Prints a board of size "rows" to the console. Board must be of type int**
 ==================================================================================== */
 
-void printBoard(int **board, int rows) { // Prints the board
+void printBoard(int **board, int rows, int cols) { // Prints the board
 	int i = 0, j = 0;
 	printf("\n\n");
 	for (i=0; i<rows; i++) {
-		for (j=0; j<rows; j++) {
+		for (j=0; j<cols; j++) {
 			if (board[i][j] == 1)
 				printf(" & ");
 			else 
