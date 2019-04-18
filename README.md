@@ -5,7 +5,7 @@ Spring of 2019
 Programmer:
 Nathan Hodgson
 
-### Important
+### Note
 
 Program currently does not work on Mac OS.
 
