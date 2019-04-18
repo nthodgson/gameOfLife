@@ -19,8 +19,8 @@ Run GoL with three command line arguments:
 
 ### Two Sample Command Line Arguments
 
-./GoL input.txt wrap show slow
-./GoL input.txt nowrap hide
+1. ./GoL input.txt wrap show slow
+2. ./GoL input.txt nowrap hide
 
 ### Output
 
