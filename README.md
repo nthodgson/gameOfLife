@@ -5,6 +5,10 @@ Spring of 2019
 Programmer:
 Nathan Hodgson
 
+### Important
+
+Program currently does not work on Mac OS.
+
 ### Program Description
 
 This program implements "Conway's Game of Life", a zero-player game which simulates the evolution of a grid of cells in a turn-by-turn basis. More information at: https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life
