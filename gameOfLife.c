@@ -9,6 +9,13 @@
 // Programmer: Nathan Hodgson
 // Program: gameOfLife.c
 
+// Declare struct for thread info
+
+struct threadData { 
+   int tid, startIndex, endIndex, numLines, numCols;
+   int **threadBoard;
+}; 
+
 // Function prototype declarations
 
 void populateBoard(int *rows, int *cols, int *iterations, int *length, int ***board, char fileName[]);
@@ -17,17 +24,32 @@ void updateBoard(int **board, int **newBoard, int rows, int cols, bool wrap);
 void config(char speed[], bool *wrap, bool *show, int args, char **arg);
 void resetBoard(int **board, int **newBoard, int rows, int cols);
 void playGame(int **board, int **newBoard, int rows, int cols, int iterations, bool wrap, bool show, char speed[]);
+void divideThreads(int numThreads, bool row, int sizeOfLine, struct threadData threadArray[numThreads]);
+void printThreadInfo (int numThreads, bool row, int rows, int cols, struct threadData threadArray[numThreads]);
 
 int main(int args, char** arg) {
-	int i = 0, rows = 0, cols = 0, iterations = 0, length = 0;
+	int i = 0, rows = 0, cols = 0, iterations = 0, length = 0, sizeOfLine = 0;
 	int **board, **newBoard;
 	char fileName[50];
 	char speed[10];
 	strcpy(fileName, arg[1]);
-	bool wrap, show;
+	bool wrap, show, row;
+	int numThreads = atoi(arg[2]);
+	struct threadData threadArray[numThreads];
 
 	config(speed, &wrap, &show, args, arg);
 	populateBoard(&rows, &cols, &iterations, &length, &board, fileName);
+
+	if (strcmp(arg[3], "row") == 0) {
+		row = true;
+		sizeOfLine = rows;
+	}
+	else {
+		row = false;
+		sizeOfLine = cols;
+	}
+
+	divideThreads(numThreads, row, sizeOfLine, threadArray);
 
 	newBoard = (int **)malloc(rows * sizeof(int *));
 	for (i=0; i<rows; i++) { // Allocate size of matrix using rows value from input file
@@ -266,4 +288,51 @@ void config(char speed[], bool *wrap, bool *show, int args, char **arg) {
 	}
 
 	return;
+}
+
+void divideThreads(int numThreads, int sizeOfLine, struct threadData threadArray[numThreads]) {
+
+	int linesPerThread = 0;
+	int numLarge = sizeOfLine % numThreads;
+	int numSmall = numThreads - numLarge;
+	int largeThread = ((sizeOfLine/numThreads) + (sizeOfLine % numThreads != 0));
+
+	if (sizeOfLine % numThreads == 0) {
+		linesPerThread = sizeOfLine/numThreads;
+		for (int i=0; i<numThreads; i++) { // If number of threads can be evenly distributed, assign each thread an equal size
+			threadArray[i].numLines = linesPerThread;
+			threadArray[i].startIndex = linesPerThread * i;
+			threadArray[i].endIndex = threadArray[i].startIndex + (numThreads-1);
+		}
+	}
+	else {
+		for (int i=0; i<numLarge; i++) { // Calculates how many large threads are needed and assigns them a number of rows or cols, start, and end point
+			threadArray[i].numLines = largeThread;
+			threadArray[i].startIndex = largeThread * i;
+			threadArray[i].endIndex = threadArray[i].startIndex + (largeThread-1);
+		}
+		for (int j=0; j<numSmall; j++) { // Calculates how many small threads are needed and assigns them a number of rows or cols, start, and end point
+			threadArray[j+numLarge].numLines = (sizeOfLine/numThreads);
+			threadArray[j+numLarge].startIndex = threadArray[j+numLarge-1].endIndex + 1;
+			threadArray[j+numLarge].endIndex = threadArray[j+numLarge].startIndex + ((sizeOfLine/numThreads)-1);
+		}
+	}
+
+	return;
+}
+
+void printThreadInfo (int numThreads, bool row, int rows, int cols, struct threadData threadArray[numThreads]) {
+
+	for (int i=0; i<numThreads; i++) {
+		if (row) {
+			printf("tid: %d  rows: %d:%d  (%d)  cols: %d:%d  (%d)\n", i, threadArray[i].startIndex, threadArray[i].endIndex, threadArray[i].numLines, 
+				0, cols-1, cols);
+		}
+		else {
+			printf("tid: %d  rows: %d:%d  (%d)  cols: %d:%d  (%d)\n", i, 0, rows-1, rows, threadArray[i].startIndex, threadArray[i].endIndex, 
+				threadArray[i].numLines);
+		}
+	}
+
+	return; 
 }
