@@ -24,7 +24,7 @@ void updateBoard(int **board, int **newBoard, int rows, int cols, bool wrap);
 void config(char speed[], bool *wrap, bool *show, int args, char **arg);
 void resetBoard(int **board, int **newBoard, int rows, int cols);
 void playGame(int **board, int **newBoard, int rows, int cols, int iterations, bool wrap, bool show, char speed[]);
-void divideThreads(int numThreads, bool row, int sizeOfLine, struct threadData threadArray[numThreads]);
+void divideThreads(int numThreads, int sizeOfLine, struct threadData threadArray[numThreads]);
 void printThreadInfo (int numThreads, bool row, int rows, int cols, struct threadData threadArray[numThreads]);
 
 int main(int args, char** arg) {
@@ -49,7 +49,7 @@ int main(int args, char** arg) {
 		sizeOfLine = cols;
 	}
 
-	divideThreads(numThreads, row, sizeOfLine, threadArray);
+	divideThreads(numThreads, sizeOfLine, threadArray);
 
 	newBoard = (int **)malloc(rows * sizeof(int *));
 	for (i=0; i<rows; i++) { // Allocate size of matrix using rows value from input file
