@@ -290,6 +290,12 @@ void config(char speed[], bool *wrap, bool *show, int args, char **arg) {
 	return;
 }
 
+/* ====================================================================================
+divideThreads(): Determines how many rows or columns each thread should be allocated
+and stores that value in each thread's struct index. Starting and ending index for 
+each row and column are also stored in each thread's struct index. 
+==================================================================================== */
+
 void divideThreads(int numThreads, int sizeOfLine, struct threadData threadArray[numThreads]) {
 
 	int linesPerThread = 0;
@@ -320,6 +326,11 @@ void divideThreads(int numThreads, int sizeOfLine, struct threadData threadArray
 
 	return;
 }
+
+/* ====================================================================================
+printThreadInfo(): Prints thread information based on contents of the struct threadArray
+and additional parameters provided.
+==================================================================================== */
 
 void printThreadInfo (int numThreads, bool row, int rows, int cols, struct threadData threadArray[numThreads]) {
 
