@@ -11,8 +11,7 @@
 int g = 0; 
   
 // The function to be executed by all threads 
-void *myThreadFun(void *vargp) 
-{ 
+void *myThreadFun(void *vargp) { 
     // Store the value argument passed to this thread 
     int *myid = (int *)vargp; 
   
