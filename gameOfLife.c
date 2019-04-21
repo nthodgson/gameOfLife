@@ -254,21 +254,21 @@ speed[] must have at least size 4.
 
 void config(char speed[], bool *wrap, bool *show, int args, char **arg) { 
 
-	if (args > 5 || args < 4) {
+	if (args > 7 || args < 6) {
 		printf("Invalid input... Exiting the program.\n");
 		exit(1);
 	}
 
-	if ((strcmp(arg[2],"wrap") != 0) && (strcmp(arg[2],"nowrap") != 0)) {
+	if ((strcmp(arg[4],"wrap") != 0) && (strcmp(arg[4],"nowrap") != 0)) {
 		printf("Incorrect wrap setting... Please try wrap or nowrap.\n");
 		exit(1);
-	} else if ((strcmp(arg[3],"show") != 0) && (strcmp(arg[3],"hide") != 0)) {
+	} else if ((strcmp(arg[5],"show") != 0) && (strcmp(arg[5],"hide") != 0)) {
 		printf("Incorrect show setting... Please try show or hide.\n");
 		exit(1);
-	} else if (strcmp(arg[3], "show") == 0) {
+	} else if (strcmp(arg[5], "show") == 0) {
 		*show = true;
-		strcpy(speed, arg[4]);
-		if ((strcmp(arg[4],"slow") != 0) && (strcmp(arg[4],"med") != 0) && (strcmp(arg[4],"fast") != 0)) {
+		strcpy(speed, arg[6]);
+		if ((strcmp(arg[6],"slow") != 0) && (strcmp(arg[6],"med") != 0) && (strcmp(arg[6],"fast") != 0)) {
 			printf("Incorrect speed setting... Please try slow, med, or fast.\n");
 			exit(1);
 		}
@@ -276,13 +276,13 @@ void config(char speed[], bool *wrap, bool *show, int args, char **arg) {
 		*show = false;
 	}
 
-	if (strcmp(arg[2], "wrap") == 0) {
+	if (strcmp(arg[4], "wrap") == 0) {
 		*wrap = true; 
 	} else {
 		*wrap = false;
 	}
 
-	if (!*show && args == 5) {
+	if (!*show && args == 7) {
 		printf("Speed setting entered on 'hide', exiting...\n");
 		exit(1);
 	}
