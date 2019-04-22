@@ -45,8 +45,6 @@ void divideThreads(int numThreads, int sizeOfLine, struct threadData threadArray
 void printThreadInfo (int numThreads, bool row, int rows, int cols, struct threadData threadArray[numThreads]);
 void *runThreads(void *threadArray);
 
-
-
 /* ====================================================================================
 playGame(): Core function of the game. Accepts number of iterations as a parameter
 and executes the full game. Prints only the final board if bool show = false. Prints
@@ -104,6 +102,14 @@ void playGame(int **board, int **newBoard, int numThreads, int rows, int cols, i
 	return;
 }
 
+/* ====================================================================================
+runThreads(): This function is called by pthread_create and is run in parallel by 
+the number of threads specified by "numThreads". Each thread executes its own portion
+of the game given the values sent by the struct pointer in the parameter. Only the 
+first thread is responsible for updating the global cell counter and printing the 
+board after each iteration. 
+==================================================================================== */
+
 void *runThreads(void *threadArray) {
 
 	struct threadData *ptr = (struct threadData*) threadArray;
@@ -125,7 +131,7 @@ void *runThreads(void *threadArray) {
 	int startIndex = ptr->startIndex;
 	int endIndex = ptr->endIndex;
 
-	for (int j=0; j<iterations; j++) {
+	for (int j=0; j<iterations; j++) { // Runs through each iteration of the game
 		if (row)
 			updateBoard(board, newBoard, startIndex, endIndex+1, 0, cols, rows, cols, wrap);
 		else
@@ -149,7 +155,7 @@ void *runThreads(void *threadArray) {
 				usleep(sleepTime);
 			}
 		}
-		pthread_barrier_wait(&barrier);
+		pthread_barrier_wait(&barrier); // Synchronize threads before the next iteration
 	}
 }
 
