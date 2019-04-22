@@ -38,7 +38,7 @@ void populateBoard(int *rows, int *cols, int *iterations, int *length, int ***bo
 void printBoard(int **board, int rows, int cols);
 void updateBoard(int **board, int **newBoard, int startRows, int endRows, int startCols, int endCols, int rows, int cols, bool wrap);
 void config(char speed[], bool *wrap, bool *show, int args, char **arg);
-void resetBoard(int **board, int **newBoard, int rows, int cols);
+void resetBoard(int **board, int **newBoard, int startRows, int endRows, int startCols, int endCols);
 void playGame(int **board, int **newBoard, int numThreads, int rows, int cols, int iterations, bool wrap, bool show, char speed[], 
 	struct threadData threadArray[numThreads], struct gridData grid);
 void divideThreads(int numThreads, int sizeOfLine, struct threadData threadArray[numThreads]);
@@ -69,8 +69,6 @@ void playGame(int **board, int **newBoard, int numThreads, int rows, int cols, i
 	} 
 
 	grid.sleepTime = sleepTime;
-
-	printBoard(board, rows, cols);
 
 	gettimeofday(&start_time, NULL);
 
@@ -136,8 +134,9 @@ void *runThreads(void *threadArray) {
 
 		pthread_barrier_wait(&barrier);
 
+		resetBoard(board, newBoard, startIndex, endIndex+1);
+
 		if (i == 0) {
-			resetBoard(board, newBoard, rows, cols);
 			if (show) {
 				system("clear");
 				printBoard(board, rows, cols);
@@ -251,7 +250,7 @@ void updateBoard(int **board, int **newBoard, int startRows, int endRows, int st
 resetBoard(): Makes board equal to newBoard for each iteration of playGame()
 ==================================================================================== */
 
-void resetBoard(int **board, int **newBoard, int rows, int cols) {  
+void resetBoard(int **board, int **newBoard, int startRows, int endRows, int startCols, int endCols) {  
 	int i, j;
 
 	for (i=0; i<rows; i++) {
