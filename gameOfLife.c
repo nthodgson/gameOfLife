@@ -36,7 +36,7 @@ int liveCells = 0;
 
 void populateBoard(int *rows, int *cols, int *iterations, int *length, int ***board, char fileName[]);
 void printBoard(int **board, int rows, int cols);
-void updateBoard(int **board, int **newBoard, int startRows, int endRows, int startCols, int endCols, bool wrap);
+void updateBoard(int **board, int **newBoard, int startRows, int endRows, int startCols, int endCols, int rows, int cols, bool wrap);
 void config(char speed[], bool *wrap, bool *show, int args, char **arg);
 void resetBoard(int **board, int **newBoard, int rows, int cols);
 void playGame(int **board, int **newBoard, int numThreads, int rows, int cols, int iterations, bool wrap, bool show, char speed[], 
@@ -69,6 +69,8 @@ void playGame(int **board, int **newBoard, int numThreads, int rows, int cols, i
 	} 
 
 	grid.sleepTime = sleepTime;
+
+	printBoard(board, rows, cols);
 
 	gettimeofday(&start_time, NULL);
 
@@ -124,13 +126,13 @@ void *runThreads(void *threadArray) {
 	int startIndex = ptr->startIndex;
 	int endIndex = ptr->endIndex;
 
-	printf("Start Index: %d  End index:  %d  Rows:  %d  Cols:  %d  i:  %d  numThreads:  %d\n", startIndex, endIndex, rows, cols, i, numThreads);
+	printf("Start Index: %d  End index:  %d  Rows:  %d  Cols:  %d  i:  %d\n", startIndex, endIndex, rows, cols, i);
 
 	for (int j=0; j<iterations; j++) {
 		if (row)
-			updateBoard(board, newBoard, startIndex, endIndex, 0, cols, wrap);
+			updateBoard(board, newBoard, startIndex, endIndex+1, 0, cols, rows, cols, wrap);
 		else
-			updateBoard(board, newBoard, 0, rows, startIndex, endIndex, wrap);
+			updateBoard(board, newBoard, 0, rows, startIndex, endIndex+1, rows, cols, wrap);
 
 		pthread_barrier_wait(&barrier);
 
@@ -199,33 +201,31 @@ updateBoard(): Runs through one iteration of cell checking. Updates 'newBoard' b
 on current values in 'board'
 ==================================================================================== */
 
-void updateBoard(int **board, int **newBoard, int startRows, int endRows, int startCols, int endCols, bool wrap) { 
+void updateBoard(int **board, int **newBoard, int startRows, int endRows, int startCols, int endCols, int rows, int cols, bool wrap) { 
 	int i = 0, j = 0, n = 0, x = 0, torusN = 0, torusX = 0, count = 0;
 
 	// This quadruple-nested for-loop runs through every index in 'board'
 	// and checks the 8 indexes around it based on the 'wrap' condition. 
 
-	
-
 	for (i=startRows; i<endRows; i++) { 
 		for (j=startCols; j<endCols; j++) {
 			for (n=(i-1); n<(i+2); n++) {
 				for (x=(j-1); x<(j+2); x++) {
-					if ((n >= 0 && n < endRows) && (x >= 0 && x < endCols)) {
+					if ((n >= 0 && n < rows) && (x >= 0 && x < cols)) {
 						if (n != i || x != j) {
 							if (board[n][x] == 1)
 								count++;
 						}
 					} else if (wrap) {
 						if (n == -1)
-							torusN = endRows-1;
-						else if (n == endRows)
+							torusN = rows-1;
+						else if (n == rows)
 							torusN = 0;
 						else
 							torusN = n;
 						if (x == -1)
-							torusX = endCols-1;
-						else if (x == endCols)
+							torusX = cols-1;
+						else if (x == cols)
 							torusX = 0;
 						else
 							torusX = x;
@@ -234,7 +234,7 @@ void updateBoard(int **board, int **newBoard, int startRows, int endRows, int st
 					}
 				}
 			}
-			if ((count == 2) && (board[i][j] == 1)) // Updates newBoard based on live cells
+			if ((count == 2) && (board[i][j] == 1)) // Updates newBoard based on live cells in board
 				newBoard[i][j] = 1;
 			else if (count == 3) 
 				newBoard[i][j] = 1;
