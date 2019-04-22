@@ -378,6 +378,7 @@ void printThreadInfo (int numThreads, bool row, int rows, int cols, struct threa
 				threadArray[i].numLines);
 		}
 	}
+	//here
 
 	return; 
 }
