@@ -58,6 +58,7 @@ int main(int args, char** arg) {
 	free(board);
 	free(newBoard);
 
+	pthread_barrier_destroy(&barrier);
 	pthread_exit(NULL);
 	
 	return 0;

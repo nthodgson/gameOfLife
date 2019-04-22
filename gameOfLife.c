@@ -13,7 +13,6 @@
 // Declare struct for thread info
 
 struct threadData { 
-   long int tid;
    int i;
    int startIndex, endIndex, numLines;
    int **board, **newBoard;
@@ -84,24 +83,16 @@ void playGame(int **board, int **newBoard, int numThreads, int rows, int cols, i
 	for (i = 0; i<numThreads; i++) {
 		threadArray[i].gridPointer = &grid;
 		threadArray[i].i = i;
-		printf("TID of %d: %ld\n", i, tid[i]);
-		threadArray[i].tid = tid[i];
 		pthread_create(&tid[i], NULL, runThreads, (void *)&threadArray[i]);
 	}
 
 	for (int i=0; i<numThreads; i++) {
-		if (pthread_join(threadArray[i].tid, NULL))
-			printf("ERROR ON TID: %ld\n", threadArray[i].tid);
-		else
-			printf("SUCCESS\n");
+		if (pthread_join(tid[i], NULL))
+			printf("ERROR ON TID: %ld\n", tid[i]);
 	}
 
-	pthread_barrier_wait(&barrier);
-
-	printf("Here\n");
-
 	if (!show) {
-		//printBoard(board, rows, cols);
+		printBoard(board, rows, cols);
 	}
 
 	gettimeofday(&end_time, NULL);
@@ -135,18 +126,23 @@ void *runThreads(void *threadArray) {
 
 	printf("Start Index: %d  End index:  %d  Rows:  %d  Cols:  %d  i:  %d  numThreads:  %d\n", startIndex, endIndex, rows, cols, i, numThreads);
 
-	if (row)
-		updateBoard(board, newBoard, startIndex, endIndex, 0, cols, wrap);
-	else
-		updateBoard(board, newBoard, 0, rows, startIndex, endIndex, wrap);
+	for (int j=0; j<iterations; j++) {
+		if (row)
+			updateBoard(board, newBoard, startIndex, endIndex, 0, cols, wrap);
+		else
+			updateBoard(board, newBoard, 0, rows, startIndex, endIndex, wrap);
 
-	if (pthread_barrier_wait(&barrier)) {
-		resetBoard(board, newBoard, rows, cols);
-		if (show) {
-			system("clear");
-			printBoard(board, rows, cols);
-			usleep(sleepTime);
+		pthread_barrier_wait(&barrier);
+
+		if (i == 0) {
+			resetBoard(board, newBoard, rows, cols);
+			if (show) {
+				system("clear");
+				printBoard(board, rows, cols);
+				usleep(sleepTime);
+			}
 		}
+		pthread_barrier_wait(&barrier);
 	}
 }
 
@@ -274,7 +270,6 @@ printBoard(): Prints a board of size "rows" to the console. Board must be of typ
 void printBoard(int **board, int rows, int cols) { // Prints the board
 	int i = 0, j = 0;
 	printf("\n\n");
-	printf("IN PRINTBOARD\n");
 	for (i=0; i<rows; i++) {
 		for (j=0; j<cols; j++) {
 			if (board[i][j] == 1)
