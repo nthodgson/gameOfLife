@@ -97,6 +97,7 @@ void playGame(int **board, int **newBoard, int numThreads, int rows, int cols, i
 
 	gettimeofday(&end_time, NULL);
 
+	printf("\nTotal number of live cells: %d\n", totalLiveCells);
 	printf("\nTotal time for %d iterations of %dx%d is %f seconds.\n\n", iterations, rows, cols, ((((double)end_time.tv_sec)
 		  - ((double)start_time.tv_sec))+((float)end_time.tv_usec-(float)start_time.tv_usec)/1000000.0));
 
@@ -124,8 +125,6 @@ void *runThreads(void *threadArray) {
 	int startIndex = ptr->startIndex;
 	int endIndex = ptr->endIndex;
 
-	printf("Start Index: %d  End index:  %d  Rows:  %d  Cols:  %d  i:  %d\n", startIndex, endIndex, rows, cols, i);
-
 	for (int j=0; j<iterations; j++) {
 		if (row)
 			updateBoard(board, newBoard, startIndex, endIndex+1, 0, cols, rows, cols, wrap);
@@ -134,9 +133,16 @@ void *runThreads(void *threadArray) {
 
 		pthread_barrier_wait(&barrier);
 
-		resetBoard(board, newBoard, startIndex, endIndex+1);
+		if (row)
+			resetBoard(board, newBoard, startIndex, endIndex+1, 0, cols);
+		else
+			resetBoard(board, newBoard, 0, rows, startIndex, endIndex+1);
 
 		if (i == 0) {
+			pthread_mutex_lock(&lock); // Extra precaution around globals
+			totalLiveCells += liveCells;
+			liveCells = 0;
+			pthread_mutex_unlock(&lock);
 			if (show) {
 				system("clear");
 				printBoard(board, rows, cols);
@@ -239,6 +245,9 @@ void updateBoard(int **board, int **newBoard, int startRows, int endRows, int st
 				newBoard[i][j] = 1;
 			else
 				newBoard[i][j] = 0;
+			pthread_mutex_lock(&lock);
+			liveCells += count;
+			pthread_mutex_unlock(&lock);
 			count = 0;
 		}
 	}
@@ -253,8 +262,8 @@ resetBoard(): Makes board equal to newBoard for each iteration of playGame()
 void resetBoard(int **board, int **newBoard, int startRows, int endRows, int startCols, int endCols) {  
 	int i, j;
 
-	for (i=0; i<rows; i++) {
-		for (j=0; j<cols; j++) {
+	for (i=startRows; i<endRows; i++) {
+		for (j=startCols; j<endCols; j++) {
 			board[i][j] = newBoard[i][j];
 		}
 	}
@@ -378,7 +387,6 @@ void printThreadInfo (int numThreads, bool row, int rows, int cols, struct threa
 				threadArray[i].numLines);
 		}
 	}
-	//here now
 
 	return; 
 }
