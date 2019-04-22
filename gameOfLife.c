@@ -19,16 +19,21 @@ struct threadData {
    struct gridData *gridPointer;
 }; 
 
+// Declare struct for grid data
+
 struct gridData {
 	int sleepTime, rows, cols, numThreads, iterations;
 	int **board, **newBoard;
 	bool row, show, wrap;
 };
 
-// Global variable declaration
+// pthread barrier and mutex declarations
 
 pthread_barrier_t barrier;
 pthread_mutex_t lock;
+
+// Global variable declarations
+
 int totalLiveCells = 0;
 int liveCells = 0;
 
