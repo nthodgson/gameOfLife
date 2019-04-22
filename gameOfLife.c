@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <time.h>
+#include <pthread.h> 
 
 // Programmer: Nathan Hodgson
 // Program: gameOfLife.c
@@ -12,61 +13,40 @@
 // Declare struct for thread info
 
 struct threadData { 
-   int tid, startIndex, endIndex, numLines, numCols;
-   int **threadBoard;
+   long int tid;
+   int i;
+   int startIndex, endIndex, numLines;
+   int **board, **newBoard;
+   struct gridData *gridPointer;
 }; 
+
+struct gridData {
+	int sleepTime, rows, cols, numThreads, iterations;
+	int **board, **newBoard;
+	bool row, show, wrap;
+};
+
+// Global variable declaration
+
+pthread_barrier_t barrier;
+pthread_mutex_t lock;
+int totalLiveCells = 0;
+int liveCells = 0;
 
 // Function prototype declarations
 
 void populateBoard(int *rows, int *cols, int *iterations, int *length, int ***board, char fileName[]);
 void printBoard(int **board, int rows, int cols);
-void updateBoard(int **board, int **newBoard, int rows, int cols, bool wrap);
+void updateBoard(int **board, int **newBoard, int startRows, int endRows, int startCols, int endCols, bool wrap);
 void config(char speed[], bool *wrap, bool *show, int args, char **arg);
 void resetBoard(int **board, int **newBoard, int rows, int cols);
-void playGame(int **board, int **newBoard, int rows, int cols, int iterations, bool wrap, bool show, char speed[]);
+void playGame(int **board, int **newBoard, int numThreads, int rows, int cols, int iterations, bool wrap, bool show, char speed[], 
+	struct threadData threadArray[numThreads], struct gridData grid);
 void divideThreads(int numThreads, int sizeOfLine, struct threadData threadArray[numThreads]);
 void printThreadInfo (int numThreads, bool row, int rows, int cols, struct threadData threadArray[numThreads]);
+void *runThreads(void *threadArray);
 
-int main(int args, char** arg) {
-	int i = 0, rows = 0, cols = 0, iterations = 0, length = 0, sizeOfLine = 0;
-	int **board, **newBoard;
-	char fileName[50];
-	char speed[10];
-	strcpy(fileName, arg[1]);
-	bool wrap, show, row;
-	int numThreads = atoi(arg[2]);
-	struct threadData threadArray[numThreads];
 
-	config(speed, &wrap, &show, args, arg);
-	populateBoard(&rows, &cols, &iterations, &length, &board, fileName);
-
-	if (strcmp(arg[3], "row") == 0) {
-		row = true;
-		sizeOfLine = rows;
-	}
-	else {
-		row = false;
-		sizeOfLine = cols;
-	}
-
-	divideThreads(numThreads, sizeOfLine, threadArray);
-
-	newBoard = (int **)malloc(rows * sizeof(int *));
-	for (i=0; i<rows; i++) { // Allocate size of matrix using rows value from input file
-		newBoard[i] = (int *)malloc(cols * sizeof(int));
-	}
-
-	playGame(board, newBoard, rows, cols, iterations, wrap, show, speed);
-
-	for (int i=0; i<rows; i++) { // Free dynamically allocated memory
-		free(board[i]);
-		free(newBoard[i]);
-	}
-	free(board);
-	free(newBoard);
-
-	return 0;
-}
 
 /* ====================================================================================
 playGame(): Core function of the game. Accepts number of iterations as a parameter
@@ -74,7 +54,8 @@ and executes the full game. Prints only the final board if bool show = false. Pr
 each iteration if show = true. 
 ==================================================================================== */
 
-void playGame(int **board, int **newBoard, int rows, int cols, int iterations, bool wrap, bool show, char speed[]) { 
+void playGame(int **board, int **newBoard, int numThreads, int rows, int cols, int iterations, bool wrap, bool show, char speed[], 
+	struct threadData threadArray[numThreads], struct gridData grid) { 
 	struct timeval start_time, end_time;
 	int sleepTime, i;
 
@@ -88,21 +69,39 @@ void playGame(int **board, int **newBoard, int rows, int cols, int iterations, b
 		}
 	} 
 
+	grid.sleepTime = sleepTime;
+
 	gettimeofday(&start_time, NULL);
 
-	for (i=0; i<iterations; i++) { // Runs specified number of iterations of the game
-		updateBoard(board, newBoard, rows, cols, wrap);
-		resetBoard(board, newBoard, rows, cols);
-		if (show) {
-			system("clear");
-			printBoard(board, rows, cols);
-			usleep(sleepTime);
-		}
+	pthread_t tid[numThreads];
+	pthread_barrier_init(&barrier, NULL, numThreads);
+
+	if (pthread_mutex_init(&lock, NULL) != 0) {
+		printf("Mutex init has failed...\n");
+		exit(1);
 	}
 
+	for (i = 0; i<numThreads; i++) {
+		threadArray[i].gridPointer = &grid;
+		threadArray[i].i = i;
+		printf("TID of %d: %ld\n", i, tid[i]);
+		threadArray[i].tid = tid[i];
+		pthread_create(&tid[i], NULL, runThreads, (void *)&threadArray[i]);
+	}
+
+	for (int i=0; i<numThreads; i++) {
+		if (pthread_join(threadArray[i].tid, NULL))
+			printf("ERROR ON TID: %ld\n", threadArray[i].tid);
+		else
+			printf("SUCCESS\n");
+	}
+
+	pthread_barrier_wait(&barrier);
+
+	printf("Here\n");
 
 	if (!show) {
-		printBoard(board, rows, cols);
+		//printBoard(board, rows, cols);
 	}
 
 	gettimeofday(&end_time, NULL);
@@ -111,6 +110,44 @@ void playGame(int **board, int **newBoard, int rows, int cols, int iterations, b
 		  - ((double)start_time.tv_sec))+((float)end_time.tv_usec-(float)start_time.tv_usec)/1000000.0));
 
 	return;
+}
+
+void *runThreads(void *threadArray) {
+
+	struct threadData *ptr = (struct threadData*) threadArray;
+	struct gridData *gridPtr = (struct gridData*) ptr->gridPointer;
+
+	bool row = gridPtr->row;
+	int numThreads = gridPtr->numThreads;
+	int **board = gridPtr->board;
+	int **newBoard = gridPtr->newBoard;
+	int cols = gridPtr->cols;
+	int rows = gridPtr->rows;
+	bool wrap = gridPtr->wrap;
+	bool show = gridPtr->show;
+	int sleepTime = gridPtr->sleepTime;
+	int iterations = gridPtr->iterations;
+
+	int i = ptr->i;
+	int numLines = ptr->numLines;
+	int startIndex = ptr->startIndex;
+	int endIndex = ptr->endIndex;
+
+	printf("Start Index: %d  End index:  %d  Rows:  %d  Cols:  %d  i:  %d  numThreads:  %d\n", startIndex, endIndex, rows, cols, i, numThreads);
+
+	if (row)
+		updateBoard(board, newBoard, startIndex, endIndex, 0, cols, wrap);
+	else
+		updateBoard(board, newBoard, 0, rows, startIndex, endIndex, wrap);
+
+	if (pthread_barrier_wait(&barrier)) {
+		resetBoard(board, newBoard, rows, cols);
+		if (show) {
+			system("clear");
+			printBoard(board, rows, cols);
+			usleep(sleepTime);
+		}
+	}
 }
 
 /* ====================================================================================
@@ -166,31 +203,33 @@ updateBoard(): Runs through one iteration of cell checking. Updates 'newBoard' b
 on current values in 'board'
 ==================================================================================== */
 
-void updateBoard(int **board, int **newBoard, int rows, int cols, bool wrap) { 
+void updateBoard(int **board, int **newBoard, int startRows, int endRows, int startCols, int endCols, bool wrap) { 
 	int i = 0, j = 0, n = 0, x = 0, torusN = 0, torusX = 0, count = 0;
 
 	// This quadruple-nested for-loop runs through every index in 'board'
 	// and checks the 8 indexes around it based on the 'wrap' condition. 
 
-	for (i=0; i<rows; i++) { 
-		for (j=0; j<cols; j++) {
+	
+
+	for (i=startRows; i<endRows; i++) { 
+		for (j=startCols; j<endCols; j++) {
 			for (n=(i-1); n<(i+2); n++) {
 				for (x=(j-1); x<(j+2); x++) {
-					if ((n >= 0 && n < rows) && (x >= 0 && x < cols)) {
+					if ((n >= 0 && n < endRows) && (x >= 0 && x < endCols)) {
 						if (n != i || x != j) {
 							if (board[n][x] == 1)
 								count++;
 						}
 					} else if (wrap) {
 						if (n == -1)
-							torusN = rows-1;
-						else if (n == rows)
+							torusN = endRows-1;
+						else if (n == endRows)
 							torusN = 0;
 						else
 							torusN = n;
 						if (x == -1)
-							torusX = cols-1;
-						else if (x == cols)
+							torusX = endCols-1;
+						else if (x == endCols)
 							torusX = 0;
 						else
 							torusX = x;
@@ -235,6 +274,7 @@ printBoard(): Prints a board of size "rows" to the console. Board must be of typ
 void printBoard(int **board, int rows, int cols) { // Prints the board
 	int i = 0, j = 0;
 	printf("\n\n");
+	printf("IN PRINTBOARD\n");
 	for (i=0; i<rows; i++) {
 		for (j=0; j<cols; j++) {
 			if (board[i][j] == 1)
@@ -308,7 +348,7 @@ void divideThreads(int numThreads, int sizeOfLine, struct threadData threadArray
 		for (int i=0; i<numThreads; i++) { // If number of threads can be evenly distributed, assign each thread an equal size
 			threadArray[i].numLines = linesPerThread;
 			threadArray[i].startIndex = linesPerThread * i;
-			threadArray[i].endIndex = threadArray[i].startIndex + (numThreads-1);
+			threadArray[i].endIndex = threadArray[i].startIndex + (linesPerThread-1);
 		}
 	}
 	else {
@@ -347,3 +387,4 @@ void printThreadInfo (int numThreads, bool row, int rows, int cols, struct threa
 
 	return; 
 }
+
