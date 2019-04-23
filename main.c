@@ -50,7 +50,7 @@ int main(int args, char** arg) {
 	grid.iterations = iterations;
 
 	playGame(board, newBoard, numThreads, rows, cols, iterations, wrap, show, speed, threadArray, grid);
-
+	printThreadInfo (numThreads, row, rows,cols,threadArray);
 	for (int i=0; i<rows; i++) { // Free dynamically allocated memory
 		free(board[i]);
 		free(newBoard[i]);
