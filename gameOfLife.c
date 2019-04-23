@@ -324,10 +324,15 @@ void config(char speed[], bool *wrap, bool *show, int args, char **arg) {
 		exit(1);
 	} else if (strcmp(arg[5], "show") == 0) {
 		*show = true;
-		strcpy(speed, arg[6]);
+		if (args != 7) {
+			printf("No speed parameter specified... Try slow, med, or fast.\n");
+			exit(1);
+		}
 		if ((strcmp(arg[6],"slow") != 0) && (strcmp(arg[6],"med") != 0) && (strcmp(arg[6],"fast") != 0)) {
 			printf("Incorrect speed setting... Please try slow, med, or fast.\n");
 			exit(1);
+		} else {
+			strcpy(speed, arg[6]);
 		}
 	} else {
 		*show = false;
