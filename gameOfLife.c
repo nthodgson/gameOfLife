@@ -390,14 +390,14 @@ and additional parameters provided.
 ==================================================================================== */
 
 void printThreadInfo (int numThreads, bool row, int rows, int cols, struct threadData threadArray[numThreads]) {
-	char tab='\t';
+
 	for (int i=0; i<numThreads; i++) { // Iterates through each thread
 		if (row) {
-			printf("tid: %-5d  rows: %4d:%d  %c (%d)    cols: %4d:%d  (%d)\n", threadArray[i].tid, threadArray[i].startIndex, threadArray[i].endIndex,tab, threadArray[i].numLines, 
+			printf("tid: %-12d  rows: %4d:%2d   (%d)    cols: %4d:%2d   (%d)\n", threadArray[i].tid, threadArray[i].startIndex, threadArray[i].endIndex, threadArray[i].numLines, 
 				0, cols-1, cols);
 		}
 		else {
-			printf("tid: %-5d  rows: %d:%d  (%d)    cols: %d:%d %c (%d)\n", threadArray[i].tid, 0, rows-1, rows, threadArray[i].startIndex, threadArray[i].endIndex, tab,
+			printf("tid: %-12d  rows: %4d:%2d   (%d)    cols: %4d:%2d   (%d)\n", threadArray[i].tid, 0, rows-1, rows, threadArray[i].startIndex, threadArray[i].endIndex,
 				threadArray[i].numLines);
 		}
 	}
