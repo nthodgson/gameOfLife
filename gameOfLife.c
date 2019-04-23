@@ -13,7 +13,7 @@
 // Declare struct for thread info
 
 struct threadData { 
-   int i;
+   int i, tid;
    int startIndex, endIndex, numLines;
    int **board, **newBoard;
    struct gridData *gridPointer;
@@ -87,6 +87,7 @@ void playGame(int **board, int **newBoard, int numThreads, int rows, int cols, i
 		threadArray[i].gridPointer = &grid;
 		threadArray[i].i = i;
 		pthread_create(&tid[i], NULL, runThreads, (void *)&threadArray[i]);
+		threadArray[i].tid = tid[i];
 	}
 
 	for (int i=0; i<numThreads; i++) {
@@ -100,7 +101,7 @@ void playGame(int **board, int **newBoard, int numThreads, int rows, int cols, i
 
 	gettimeofday(&end_time, NULL);
 
-	printf("\nTotal number of live cells: %d\n", totalLiveCells);
+	printf("\nTotal live cells processed during execution: %d\n", totalLiveCells);
 	printf("\nTotal time for %d iterations of %dx%d is %f seconds.\n\n", iterations, rows, cols, ((((double)end_time.tv_sec)
 		  - ((double)start_time.tv_sec))+((float)end_time.tv_usec-(float)start_time.tv_usec)/1000000.0));
 
@@ -149,7 +150,7 @@ void *runThreads(void *threadArray) {
 		else
 			resetBoard(board, newBoard, 0, rows, startIndex, endIndex+1);
 
-		if (i == 0) {
+		if (i == 0) { // Only the first thread is responsible for printing and incrementing global counter
 			pthread_mutex_lock(&lock); // Extra precaution around globals
 			totalLiveCells += liveCells;
 			liveCells = 0;
@@ -225,13 +226,18 @@ void updateBoard(int **board, int **newBoard, int startRows, int endRows, int st
 
 	for (i=startRows; i<endRows; i++) { 
 		for (j=startCols; j<endCols; j++) {
+			if (board[i][j] == 1) {
+				pthread_mutex_lock(&lock); // Protect global counter with mutex lock
+				liveCells++;
+				pthread_mutex_unlock(&lock);
+			}
 			for (n=(i-1); n<(i+2); n++) {
 				for (x=(j-1); x<(j+2); x++) {
 					if ((n >= 0 && n < rows) && (x >= 0 && x < cols)) {
 						if (n != i || x != j) {
 							if (board[n][x] == 1)
 								count++;
-						}
+						} 
 					} else if (wrap) {
 						if (n == -1)
 							torusN = rows-1;
@@ -256,9 +262,6 @@ void updateBoard(int **board, int **newBoard, int startRows, int endRows, int st
 				newBoard[i][j] = 1;
 			else
 				newBoard[i][j] = 0;
-			pthread_mutex_lock(&lock);
-			liveCells += count;
-			pthread_mutex_unlock(&lock);
 			count = 0;
 		}
 	}
@@ -267,7 +270,7 @@ void updateBoard(int **board, int **newBoard, int startRows, int endRows, int st
 }
 
 /* ====================================================================================
-resetBoard(): Makes board equal to newBoard for each iteration of playGame()
+resetBoard(): Makes board equal to newBoard for each iteration of runThreads()
 ==================================================================================== */
 
 void resetBoard(int **board, int **newBoard, int startRows, int endRows, int startCols, int endCols) {  
@@ -388,17 +391,16 @@ and additional parameters provided.
 
 void printThreadInfo (int numThreads, bool row, int rows, int cols, struct threadData threadArray[numThreads]) {
 	char tab='\t';
-	for (int i=0; i<numThreads; i++) {
+	for (int i=0; i<numThreads; i++) { // Iterates through each thread
 		if (row) {
-			printf("tid: %-5d  rows: %5d:%d  %c (%d)  cols: %5d:%d  (%d)\n", i, threadArray[i].startIndex, threadArray[i].endIndex,tab, threadArray[i].numLines, 
+			printf("tid: %-5d  rows: %4d:%d  %c (%d)    cols: %4d:%d  (%d)\n", threadArray[i].tid, threadArray[i].startIndex, threadArray[i].endIndex,tab, threadArray[i].numLines, 
 				0, cols-1, cols);
 		}
 		else {
-			printf("tid: %-5d  rows: %d:%d  (%d)  cols: %d:%d %c (%d)\n", i, 0, rows-1, rows, threadArray[i].startIndex, threadArray[i].endIndex, tab,
+			printf("tid: %-5d  rows: %d:%d  (%d)    cols: %d:%d %c (%d)\n", threadArray[i].tid, 0, rows-1, rows, threadArray[i].startIndex, threadArray[i].endIndex, tab,
 				threadArray[i].numLines);
 		}
 	}
-	//here
 
 	return; 
 }

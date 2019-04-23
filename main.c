@@ -1,13 +1,7 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <unistd.h>
-#include <sys/time.h>
-#include <time.h>
-#include <pthread.h> 
 #include "gameOfLife.c"
 
+// Programmer: Nathan Hodgson
+// Program: main.c
 
 int main(int args, char** arg) {
 	int i = 0, rows = 0, cols = 0, iterations = 0, length = 0, sizeOfLine = 0;
@@ -23,7 +17,7 @@ int main(int args, char** arg) {
 	config(speed, &wrap, &show, args, arg);
 	populateBoard(&rows, &cols, &iterations, &length, &board, fileName);
 
-	if (strcmp(arg[3], "row") == 0) {
+	if (strcmp(arg[3], "row") == 0) { 
 		row = true;
 		sizeOfLine = rows;
 	}
@@ -51,6 +45,7 @@ int main(int args, char** arg) {
 
 	playGame(board, newBoard, numThreads, rows, cols, iterations, wrap, show, speed, threadArray, grid);
 	printThreadInfo (numThreads, row, rows,cols,threadArray);
+
 	for (int i=0; i<rows; i++) { // Free dynamically allocated memory
 		free(board[i]);
 		free(newBoard[i]);
@@ -58,6 +53,7 @@ int main(int args, char** arg) {
 	free(board);
 	free(newBoard);
 	
+	pthread_mutex_destroy(&lock); // Destroy thread mutex and barrier
 	pthread_barrier_destroy(&barrier);
 	pthread_exit(NULL);
 	
