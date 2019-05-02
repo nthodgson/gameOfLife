@@ -16,7 +16,7 @@ Using multithreading, this program implements "Conway's Game of Life", a zero-pl
 ### Compilation Specifications
 
 The following command line argument compiles the program:
-make all
+	make all
 
 ### Execution Specifications
 
