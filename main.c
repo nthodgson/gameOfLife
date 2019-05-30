@@ -1,4 +1,4 @@
-#include "gameOfLife.c"
+#include "global.h"
 
 // Programmer: Nathan Hodgson
 // Program: main.c
