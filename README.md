@@ -16,14 +16,10 @@ Using multithreading, this program implements "Conway's Game of Life", a zero-pl
 ### Compilation Specifications
 
 The following command line argument compiles the program:
-<<<<<<< HEAD
 
 ```shell
-gcc main.c -lpthread -o main -g
+make all
 ```
-=======
-	make all
->>>>>>> 197f1357c64e3cd449f69c362b8c08b59b2949c5
 
 ### Execution Specifications
 
@@ -38,17 +34,12 @@ Run main with the following command line arguments:
 
 ### Two Sample Command Line Arguments
 
-<<<<<<< HEAD
 ```shell
-./main oscillator.txt 5 row wrap show slow
+./GoL oscillator.txt 5 row wrap show slow
 ```
 ```shell
-./main oscillator.txt 3 col nowrap hide
+./GoL oscillator.txt 3 col nowrap hide
 ```
-=======
-- ./GoL oscillator.txt 5 row wrap show slow
-- ./GoL oscillator.txt 3 col nowrap hide
->>>>>>> 197f1357c64e3cd449f69c362b8c08b59b2949c5
 
 ### Output
 
